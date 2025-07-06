@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ import {
   Shield,
   ThumbsUp,
   Clock,
-  Anonymous
+  UserX
 } from "lucide-react";
 
 const PeerSupport = () => {
@@ -123,7 +122,7 @@ const PeerSupport = () => {
           
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Anonymous className="w-4 h-4" />
+              <UserX className="w-4 h-4" />
               <span>Your post will be anonymous</span>
             </div>
             
