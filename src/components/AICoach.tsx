@@ -13,14 +13,18 @@ import {
   Moon,
   CheckCircle,
   Play,
-  Clock
+  Clock,
+  Timer
 } from "lucide-react";
+import { useState } from "react";
 import { useAppContext } from "@/contexts/AppContext";
 import { useToast } from "@/hooks/use-toast";
+import ActivityTimer from "./ActivityTimer";
 
 const AICoach = () => {
   const { completedActivities, completeActivity, userStats } = useAppContext();
   const { toast } = useToast();
+  const [activeTimer, setActiveTimer] = useState<string | null>(null);
 
   const wellnessActivities = [
     {
@@ -85,6 +89,26 @@ const AICoach = () => {
     }
   ];
 
+  const handleStartTimer = (activityId: string) => {
+    setActiveTimer(activityId);
+  };
+
+  const handleCompleteFromTimer = (activityId: string) => {
+    const activity = wellnessActivities.find(a => a.id === activityId);
+    if (activity) {
+      completeActivity(activityId);
+      toast({
+        title: "Activity Completed! 🎉",
+        description: `Great job completing "${activity.title}"! You earned ${activity.points} points.`,
+      });
+      setActiveTimer(null);
+    }
+  };
+
+  const handleCloseTimer = () => {
+    setActiveTimer(null);
+  };
+
   const handleCompleteTask = (activityId: string, activityTitle: string, points: number) => {
     completeActivity(activityId);
     toast({
@@ -92,11 +116,6 @@ const AICoach = () => {
       description: `Great job completing "${activityTitle}"! You earned ${points} points.`,
     });
   };
-
-  const totalPoints = completedActivities.reduce((sum, taskId) => {
-    const task = wellnessActivities.find(t => t.id === taskId);
-    return sum + (task?.points || 0);
-  }, 0);
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -116,8 +135,20 @@ const AICoach = () => {
     }
   };
 
+  const activeActivity = wellnessActivities.find(a => a.id === activeTimer);
+
   return (
     <div className="space-y-6">
+      {/* Timer Modal */}
+      {activeTimer && activeActivity && (
+        <ActivityTimer
+          activityTitle={activeActivity.title}
+          duration={activeActivity.duration}
+          onComplete={() => handleCompleteFromTimer(activeTimer)}
+          onClose={handleCloseTimer}
+        />
+      )}
+
       {/* AI Coach Header */}
       <Card className="bg-gradient-to-r from-purple-500 to-blue-600 text-white border-0">
         <CardContent className="p-6">
@@ -127,7 +158,7 @@ const AICoach = () => {
                 <Brain className="w-6 h-6" />
                 <span>Your AI Wellness Coach</span>
               </h2>
-              <p className="text-purple-100">Personalized activities based on your mood and goals</p>
+              <p className="text-purple-100">Personalized activities with dedicated focus time</p>
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold">{userStats.totalPoints}</div>
@@ -217,8 +248,8 @@ const AICoach = () => {
                       </div>
                     </div>
                     
-                    <div className="text-right">
-                      <div className="text-lg font-bold text-purple-600 mb-2">
+                    <div className="text-right space-y-2">
+                      <div className="text-lg font-bold text-purple-600">
                         +{activity.points} pts
                       </div>
                       
@@ -227,14 +258,25 @@ const AICoach = () => {
                           ✓ Complete
                         </Badge>
                       ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => handleCompleteTask(activity.id, activity.title, activity.points)}
-                          className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700"
-                        >
-                          <Play className="w-4 h-4 mr-1" />
-                          Start
-                        </Button>
+                        <div className="flex flex-col space-y-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleStartTimer(activity.id)}
+                            className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700"
+                          >
+                            <Timer className="w-4 h-4 mr-1" />
+                            Focus Time
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCompleteTask(activity.id, activity.title, activity.points)}
+                            className="text-xs"
+                          >
+                            <Play className="w-3 h-3 mr-1" />
+                            Quick Complete
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
