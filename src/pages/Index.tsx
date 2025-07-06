@@ -19,15 +19,11 @@ import MoodTracker from "@/components/MoodTracker";
 import AICoach from "@/components/AICoach";
 import PeerSupport from "@/components/PeerSupport";
 import WellnessStats from "@/components/WellnessStats";
+import { useAppContext } from "@/contexts/AppContext";
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [userStats] = useState({
-    streak: 7,
-    wellnessScore: 72,
-    completedTasks: 15,
-    totalTasks: 20
-  });
+  const { userStats, supportPosts } = useAppContext();
 
   const navigationItems = [
     { id: "dashboard", label: "Dashboard", icon: TrendingUp },
@@ -45,7 +41,7 @@ const Index = () => {
       case "community":
         return <PeerSupport />;
       default:
-        return <DashboardView userStats={userStats} />;
+        return <DashboardView userStats={userStats} supportPosts={supportPosts} />;
     }
   };
 
@@ -112,7 +108,7 @@ const Index = () => {
   );
 };
 
-const DashboardView = ({ userStats }: { userStats: any }) => {
+const DashboardView = ({ userStats, supportPosts }: { userStats: any, supportPosts: any[] }) => {
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
@@ -168,7 +164,7 @@ const DashboardView = ({ userStats }: { userStats: any }) => {
                 <MessageCircle className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-gray-900">12</div>
+                <div className="text-2xl font-bold text-gray-900">{supportPosts.length}</div>
                 <div className="text-sm text-gray-600">Support Messages</div>
               </div>
             </div>
@@ -200,7 +196,7 @@ const DashboardView = ({ userStats }: { userStats: any }) => {
                   ✅
                 </div>
                 <div className="text-sm font-medium">Mood Check</div>
-                <div className="text-xs text-gray-600">Completed</div>
+                <div className="text-xs text-gray-600">Available</div>
               </div>
               
               <div className="text-center">
@@ -208,7 +204,7 @@ const DashboardView = ({ userStats }: { userStats: any }) => {
                   🧘
                 </div>
                 <div className="text-sm font-medium">Mindfulness</div>
-                <div className="text-xs text-gray-600">5 min left</div>
+                <div className="text-xs text-gray-600">AI Coach</div>
               </div>
               
               <div className="text-center">
@@ -216,15 +212,15 @@ const DashboardView = ({ userStats }: { userStats: any }) => {
                   📝
                 </div>
                 <div className="text-sm font-medium">Journaling</div>
-                <div className="text-xs text-gray-600">Pending</div>
+                <div className="text-xs text-gray-600">With Mood</div>
               </div>
               
               <div className="text-center">
                 <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  💧
+                  💙
                 </div>
-                <div className="text-sm font-medium">Hydration</div>
-                <div className="text-xs text-gray-600">3/8 glasses</div>
+                <div className="text-sm font-medium">Support</div>
+                <div className="text-xs text-gray-600">Community</div>
               </div>
             </div>
           </div>

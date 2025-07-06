@@ -5,11 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Heart, TrendingUp, Calendar, Sparkles } from "lucide-react";
+import { useAppContext } from "@/contexts/AppContext";
+import { useToast } from "@/hooks/use-toast";
 
 const MoodTracker = () => {
   const [selectedMood, setSelectedMood] = useState<string>("");
   const [journalEntry, setJournalEntry] = useState("");
   const [showReflection, setShowReflection] = useState(false);
+  const { moodEntries, addMoodEntry } = useAppContext();
+  const { toast } = useToast();
 
   const moods = [
     { emoji: "😄", label: "Great", value: "great", color: "bg-green-100 text-green-700" },
@@ -21,7 +25,19 @@ const MoodTracker = () => {
 
   const handleMoodSubmit = () => {
     if (selectedMood) {
+      addMoodEntry(selectedMood, journalEntry);
       setShowReflection(true);
+      toast({
+        title: "Mood logged successfully!",
+        description: "Your wellness journey continues. Keep tracking your progress.",
+      });
+      
+      // Reset form after 3 seconds
+      setTimeout(() => {
+        setSelectedMood("");
+        setJournalEntry("");
+        setShowReflection(false);
+      }, 3000);
     }
   };
 
@@ -34,6 +50,31 @@ const MoodTracker = () => {
       sad: "I'm here for you during this difficult moment. Sadness is a natural human emotion, but you deserve support. Consider gentle self-care activities or connecting with a friend, counselor, or support group."
     };
     return reflections[selectedMood as keyof typeof reflections] || "Thank you for checking in with yourself today. Self-awareness is the first step toward emotional well-being.";
+  };
+
+  const getMoodEmoji = (mood: string) => {
+    const moodEmoji: Record<string, string> = {
+      'great': '😄',
+      'good': '🙂',
+      'okay': '😐',
+      'down': '☹️',
+      'sad': '😢'
+    };
+    return moodEmoji[mood] || '😐';
+  };
+
+  const getTimeAgo = (timestamp: string) => {
+    const now = new Date();
+    const entryTime = new Date(timestamp);
+    const diffInMinutes = Math.floor((now.getTime() - entryTime.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes} minutes ago`;
+    } else if (diffInMinutes < 1440) {
+      return `${Math.floor(diffInMinutes / 60)} hours ago`;
+    } else {
+      return `${Math.floor(diffInMinutes / 1440)} days ago`;
+    }
   };
 
   return (
@@ -122,38 +163,25 @@ const MoodTracker = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl">😄</span>
-                <div>
-                  <div className="font-medium">Great mood</div>
-                  <div className="text-sm text-gray-600">Yesterday, 2:30 PM</div>
+            {moodEntries.length === 0 ? (
+              <p className="text-gray-500 text-center py-4">No mood entries yet. Start by logging your first mood!</p>
+            ) : (
+              moodEntries.slice(0, 5).map((entry) => (
+                <div key={entry.id} className="flex items-center justify-between p-3 bg-white/50 rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl">{getMoodEmoji(entry.mood)}</span>
+                    <div>
+                      <div className="font-medium capitalize">{entry.mood} mood</div>
+                      <div className="text-sm text-gray-600">{getTimeAgo(entry.timestamp)}</div>
+                      {entry.note && (
+                        <div className="text-sm text-gray-700 mt-1 italic">"{entry.note}"</div>
+                      )}
+                    </div>
+                  </div>
+                  <Badge className="bg-blue-100 text-blue-700">Logged</Badge>
                 </div>
-              </div>
-              <Badge className="bg-green-100 text-green-700">+2 streak</Badge>
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl">🙂</span>
-                <div>
-                  <div className="font-medium">Good mood</div>
-                  <div className="text-sm text-gray-600">2 days ago, 6:15 PM</div>
-                </div>
-              </div>
-              <Badge className="bg-blue-100 text-blue-700">Consistent</Badge>
-            </div>
-
-            <div className="flex items-center justify-between p-3 bg-white/50 rounded-lg">
-              <div className="flex items-center space-x-3">
-                <span className="text-2xl">😐</span>
-                <div>
-                  <div className="font-medium">Okay mood</div>
-                  <div className="text-sm text-gray-600">3 days ago, 10:00 AM</div>
-                </div>
-              </div>
-              <Badge className="bg-yellow-100 text-yellow-700">Reflection day</Badge>
-            </div>
+              ))
+            )}
           </div>
 
           <Button variant="ghost" className="w-full mt-4 text-blue-600">

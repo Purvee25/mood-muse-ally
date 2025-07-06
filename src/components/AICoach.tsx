@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,9 +15,12 @@ import {
   Play,
   Clock
 } from "lucide-react";
+import { useAppContext } from "@/contexts/AppContext";
+import { useToast } from "@/hooks/use-toast";
 
 const AICoach = () => {
-  const [completedTasks, setCompletedTasks] = useState<string[]>([]);
+  const { completedActivities, completeActivity, userStats } = useAppContext();
+  const { toast } = useToast();
 
   const wellnessActivities = [
     {
@@ -83,13 +85,15 @@ const AICoach = () => {
     }
   ];
 
-  const handleCompleteTask = (taskId: string) => {
-    if (!completedTasks.includes(taskId)) {
-      setCompletedTasks([...completedTasks, taskId]);
-    }
+  const handleCompleteTask = (activityId: string, activityTitle: string, points: number) => {
+    completeActivity(activityId);
+    toast({
+      title: "Activity Completed! 🎉",
+      description: `Great job completing "${activityTitle}"! You earned ${points} points.`,
+    });
   };
 
-  const totalPoints = completedTasks.reduce((sum, taskId) => {
+  const totalPoints = completedActivities.reduce((sum, taskId) => {
     const task = wellnessActivities.find(t => t.id === taskId);
     return sum + (task?.points || 0);
   }, 0);
@@ -126,8 +130,8 @@ const AICoach = () => {
               <p className="text-purple-100">Personalized activities based on your mood and goals</p>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold">{totalPoints}</div>
-              <div className="text-purple-200 text-sm">Points Today</div>
+              <div className="text-3xl font-bold">{userStats.totalPoints}</div>
+              <div className="text-purple-200 text-sm">Total Points</div>
             </div>
           </div>
         </CardContent>
@@ -143,22 +147,22 @@ const AICoach = () => {
             <div>
               <div className="flex justify-between mb-2">
                 <span className="font-medium">Daily Activities</span>
-                <span className="text-sm text-gray-600">{completedTasks.length}/{wellnessActivities.length}</span>
+                <span className="text-sm text-gray-600">{completedActivities.length}/{wellnessActivities.length}</span>
               </div>
-              <Progress value={(completedTasks.length / wellnessActivities.length) * 100} className="h-3" />
+              <Progress value={(completedActivities.length / wellnessActivities.length) * 100} className="h-3" />
             </div>
             
             <div className="grid grid-cols-3 gap-4 mt-4">
               <div className="text-center p-3 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">{completedTasks.length}</div>
+                <div className="text-2xl font-bold text-purple-600">{completedActivities.length}</div>
                 <div className="text-sm text-purple-600">Completed</div>
               </div>
               <div className="text-center p-3 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">{totalPoints}</div>
+                <div className="text-2xl font-bold text-blue-600">{userStats.totalPoints}</div>
                 <div className="text-sm text-blue-600">Points</div>
               </div>
               <div className="text-center p-3 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">7</div>
+                <div className="text-2xl font-bold text-green-600">{userStats.streak}</div>
                 <div className="text-sm text-green-600">Day Streak</div>
               </div>
             </div>
@@ -173,7 +177,7 @@ const AICoach = () => {
         <div className="grid gap-4">
           {wellnessActivities.map((activity) => {
             const Icon = activity.icon;
-            const isCompleted = completedTasks.includes(activity.id);
+            const isCompleted = completedActivities.includes(activity.id);
             
             return (
               <Card key={activity.id} className={`transition-all duration-200 ${
@@ -225,7 +229,7 @@ const AICoach = () => {
                       ) : (
                         <Button
                           size="sm"
-                          onClick={() => handleCompleteTask(activity.id)}
+                          onClick={() => handleCompleteTask(activity.id, activity.title, activity.points)}
                           className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700"
                         >
                           <Play className="w-4 h-4 mr-1" />

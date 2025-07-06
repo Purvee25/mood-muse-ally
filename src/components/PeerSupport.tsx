@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,61 +14,40 @@ import {
   Clock,
   UserX
 } from "lucide-react";
+import { useAppContext } from "@/contexts/AppContext";
+import { useToast } from "@/hooks/use-toast";
 
 const PeerSupport = () => {
   const [newPost, setNewPost] = useState("");
-  const [posts, setPosts] = useState([
-    {
-      id: 1,
-      content: "Today was challenging but I made it through. Sometimes just taking it one hour at a time helps. Anyone else feel this way?",
-      timestamp: "2 hours ago",
-      likes: 12,
-      replies: 3,
-      anonymous: true,
-      supportive: true
-    },
-    {
-      id: 2, 
-      content: "I've been practicing the 5-4-3-2-1 grounding technique when I feel anxious. 5 things you see, 4 you can touch, 3 you hear, 2 you smell, 1 you taste. It really helps center me.",
-      timestamp: "4 hours ago",
-      likes: 23,
-      replies: 7,
-      anonymous: true,
-      supportive: true
-    },
-    {
-      id: 3,
-      content: "Gentle reminder: It's okay to have bad days. You're not weak for struggling. You're human for feeling. Tomorrow is a new opportunity. 💙",
-      timestamp: "6 hours ago", 
-      likes: 45,
-      replies: 12,
-      anonymous: true,
-      supportive: true
-    }
-  ]);
+  const { supportPosts, addSupportPost, likeSupportPost } = useAppContext();
+  const { toast } = useToast();
 
   const handleSubmitPost = () => {
     if (newPost.trim()) {
-      const newPostObj = {
-        id: posts.length + 1,
-        content: newPost,
-        timestamp: "Just now",
-        likes: 0,
-        replies: 0,
-        anonymous: true,
-        supportive: true
-      };
-      setPosts([newPostObj, ...posts]);
+      addSupportPost(newPost);
       setNewPost("");
+      toast({
+        title: "Post shared successfully! 💙",
+        description: "Your anonymous post has been added to the support wall.",
+      });
     }
   };
 
   const handleLike = (postId: number) => {
-    setPosts(posts.map(post => 
-      post.id === postId 
-        ? { ...post, likes: post.likes + 1 }
-        : post
-    ));
+    likeSupportPost(postId);
+  };
+
+  const getTimeAgo = (timestamp: string) => {
+    if (timestamp === "Just now") return timestamp;
+    
+    // Handle relative time strings
+    const timePatterns = {
+      'hour': /(\d+)\s*hours?\s*ago/,
+      'minute': /(\d+)\s*minutes?\s*ago/,
+      'day': /(\d+)\s*days?\s*ago/
+    };
+    
+    return timestamp;
   };
 
   return (
@@ -142,48 +122,61 @@ const PeerSupport = () => {
       <div className="space-y-4">
         <h3 className="text-xl font-semibold">Community Support</h3>
         
-        {posts.map((post) => (
-          <Card key={post.id} className="bg-white/60 backdrop-blur-md border-blue-100 hover:shadow-md transition-all duration-200">
-            <CardContent className="p-4">
-              <div className="space-y-4">
-                <p className="text-gray-800 leading-relaxed">{post.content}</p>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleLike(post.id)}
-                      className="text-pink-600 hover:text-pink-700 hover:bg-pink-50"
-                    >
-                      <Heart className="w-4 h-4 mr-1" />
-                      {post.likes}
-                    </Button>
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                    >
-                      <MessageCircle className="w-4 h-4 mr-1" />
-                      {post.replies} replies
-                    </Button>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Badge variant="outline" className="text-gray-500">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {post.timestamp}
-                    </Badge>
-                    <Badge className="bg-green-100 text-green-700">
-                      Anonymous
-                    </Badge>
-                  </div>
-                </div>
-              </div>
+        {supportPosts.length === 0 ? (
+          <Card className="bg-white/60 backdrop-blur-md border-blue-100">
+            <CardContent className="p-8 text-center">
+              <Users className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-gray-500">No posts yet. Be the first to share support with the community!</p>
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          supportPosts.map((post) => (
+            <Card key={post.id} className="bg-white/60 backdrop-blur-md border-blue-100 hover:shadow-md transition-all duration-200">
+              <CardContent className="p-4">
+                <div className="space-y-4">
+                  <p className="text-gray-800 leading-relaxed">{post.content}</p>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleLike(post.id)}
+                        className={`transition-colors ${
+                          post.likedByUser 
+                            ? "text-pink-600 hover:text-pink-700 hover:bg-pink-50 bg-pink-50" 
+                            : "text-pink-600 hover:text-pink-700 hover:bg-pink-50"
+                        }`}
+                      >
+                        <Heart className={`w-4 h-4 mr-1 ${post.likedByUser ? 'fill-current' : ''}`} />
+                        {post.likes}
+                      </Button>
+                      
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        <MessageCircle className="w-4 h-4 mr-1" />
+                        {post.replies} replies
+                      </Button>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline" className="text-gray-500">
+                        <Clock className="w-3 h-3 mr-1" />
+                        {getTimeAgo(post.timestamp)}
+                      </Badge>
+                      <Badge className="bg-green-100 text-green-700">
+                        Anonymous
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       {/* Support Resources */}
